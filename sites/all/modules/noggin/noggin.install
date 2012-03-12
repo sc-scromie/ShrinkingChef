@@ -1,0 +1,18 @@
+<?php
+// $Id: noggin.install,v 1.1 2010/08/15 20:36:10 eaton Exp $
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Nukes old site variables, and removes the uploaded header image.
+ */
+function noggin_uninstall() {
+  variable_del('noggin:use_header');
+  variable_del('noggin:header_selector');
+  variable_del('noggin:extra_attributes');
+
+  if ($header_path = variable_get('noggin:header_path')) {
+    file_unmanaged_delete($header_path);
+  }
+  variable_del('noggin:header_path');
+}

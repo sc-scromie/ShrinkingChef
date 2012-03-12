@@ -1,0 +1,37 @@
+li a.active {
+color: whiteSmoke;
+}
+
+.sf-menu.sf-style-sc li,
+.sf-menu.sf-style-sc.sf-navbar {
+  display:block;
+  padding:0 1em;
+  text-decoration:none;
+  border-bottom:0;
+  font:bold 1.0em/2em arial,geneva,helvetica,sans-serif;
+  color:#FFFFFF;
+  background-color:#3300CC;
+  
+  /* CSS 3 elements */
+  -webkit-border-top-right-radius:0.50em;
+  -webkit-border-top-left-radius:0.50em;
+  -moz-border-radius-topright:0.50em;
+  -moz-border-radius-topleft:0.50em;
+  border-top-right-radius:0.50em;
+  border-top-left-radius:0.50em;
+}
+
+.sf-menu.sf-style-sc li a:hover {
+  background:#3333FF;
+  color:#FFF;
+  text-decoration:none;
+}
+
+.sf-menu.sf-style-sc li#current a {
+  background-color: #663399;
+  color: #FFF;
+}
+
+.sf-menu.sf-style-sc li#current a:hover {
+  background #663399;
+}

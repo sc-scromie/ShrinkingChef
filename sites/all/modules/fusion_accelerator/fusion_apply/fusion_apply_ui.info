@@ -1,0 +1,14 @@
+name = Fusion Apply UI
+description = Administrative interface to apply skins to page elements.  Without this module, you cannot edit your skins or rules.  
+package = Fusion
+core = 7.x
+configure = admin/appearance/fusion
+dependencies[] = fusion_apply
+files[] = tests/fusion_apply_ui.test
+
+; Information added by drupal.org packaging script on 2011-11-01
+version = "7.x-2.0-alpha2"
+core = "7.x"
+project = "fusion_accelerator"
+datestamp = "1320119731"
+

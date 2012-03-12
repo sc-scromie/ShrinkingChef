@@ -1,0 +1,311 @@
+<?php
+/**
+ * This module adds a tab to the theme admin to calculate Fusion CSS and .info files.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function fusion_accelerator_menu() {
+  $items['admin/appearance/fusion/custom_grid'] = array(
+    'title' => 'Grid Tools',
+    'description' => 'A set of tools for developing with the Fusion theme framework.',
+    'page callback' => '_fusion_accelerator_admin_page',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+/**
+ * Form to input parameters of the grid.
+ */
+function fusion_accelerator_grid_form($form, $form_state) {
+
+  $form['grid'] = array(
+    '#title' => t('Grid Parameters'),
+    '#type' => 'fieldset',
+  );
+  $form['grid']['width'] = array(
+    '#default_value' => isset($form_state['values']['width']) ? $form_state['values']['width'] : 960,
+    '#description' => t('The total number of pixels of the grid.  This is the width of the theme.'),
+    '#maxlength' => 5,
+    '#size' => 4,
+    '#title' => t('Width'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+  );
+  $form['grid']['units'] = array(
+    '#default_value' => isset($form_state['values']['units']) ? $form_state['values']['units'] : 16,
+    '#description' => t('The number of columns that should divide the full width of the grid.'),
+    '#maxlength' => 3,
+    '#required' => TRUE,
+    '#size' => 2,
+    '#title' => t('Units'),
+    '#type' => 'textfield',
+  );
+  $form['grid']['gutter'] = array(
+    '#default_value' => isset($form_state['values']['gutter']) ? $form_state['values']['gutter'] : 30,
+    '#description' => t('The number of pixels that pad each grid is called the gutter.'),
+    '#maxlength' => 3,
+    '#required' => TRUE,
+    '#size' => 2,
+    '#title' => t('Gutter'),
+    '#type' => 'textfield',
+  );
+  $form['grid']['fluid'] = array(
+    '#default_value' => isset($form_state['values']['fluid']) ? TRUE : FALSE,
+    '#description' => t('If the layout is marked as fluid, the grid widths will expand and contract according to the browser width.'),
+    '#title' => t('Fluid layout'),
+    '#type' => 'checkbox',
+  );
+  $form['results'] = array(
+    '#title' => t('Results'),
+    '#type' => 'fieldset',
+  );
+  $form['results']['grid_css'] = array(
+    '#default_value' => isset($form_state['fusion']['css_grid_file']) ? $form_state['fusion']['css_grid_file'] : '',
+    '#description' => t('Save your custom grid file to the css subfolder inside of your theme folder.'),
+    '#rows' => '10',
+    '#title' => 'Grid CSS file',
+    '#type' => 'textarea',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Generate components'),
+  );
+
+  return $form;
+}
+
+/**
+ * Generates the grid CSS and info file.
+ */
+function fusion_accelerator_grid_form_submit($form, &$form_state) {
+  
+  // the FAPI caches a form after it has been generated once.
+  // after submitting the grid calculator form, we want to reload it with the submitted values,
+  // along with the generated components in textareas.
+  // to do that, we have to turn the cache off.  
+  $form_state['rebuild'] = TRUE;
+
+  $grid_units = $form_state['values']['units'];
+  $grid_gutter = $form_state['values']['gutter'];
+  $grid_width = $form_state['values']['width'];
+  $fluid = $form_state['values']['fluid'];
+  $form_state['input']['grid_css'] = _fusion_accelerator_generate_grid_css($grid_units, $grid_gutter, $grid_width, $fluid);
+  $form_state['complete form']['grid']['width']['#value'] = 60;
+
+}
+
+/**
+ * Callback.
+ */
+function _fusion_accelerator_admin_page() {
+  return drupal_get_form('fusion_accelerator_grid_form');
+}
+
+/**
+ * Outputs the CSS and .info file for a grid.
+ * @input int
+ *    number of columns in the grid (eg: 16)
+ * @input int
+ *    gutter width in pixels (eg: 30)
+ * @input int
+ *    total width in pixels (eg: 960).  is set to 100 for fluid
+ * @input boolean
+ *    grid widths should be percentages if TRUE
+ * @return css
+ */
+function _fusion_accelerator_generate_grid_css($grid_units = '', $grid_gutter = '', $grid_width = 100, $fluid = FALSE) {
+
+  if (!$grid_units || !$grid_gutter || !$grid_width) {
+    return FALSE;
+  }
+
+  $lf = "\n";
+  $lf2 = "\n\n";
+  $tab = '  ';
+  $output = '';
+  $grid_width_label = ($fluid) ? 'fluid' : $grid_width;
+  $grid_width_unit = ($fluid) ? '' : 'px';
+  $grid_width = ($fluid) ? '100' : $grid_width;
+
+  $output .= '/**' . $lf;
+  $output .= " * @file grid{$grid_units}-{$grid_width_label}.css" . $lf;
+  $output .= " * Fusion Grid Layout - {$grid_units} column grid, {$grid_width_label}{$grid_width_unit} width, {$grid_gutter}px gutters" . $lf;
+  $output .= " * -------------------------------------------------------------------- */" . $lf2;
+
+  $output .= "/* grid widths */" . $lf;
+  $output .= _fusion_accelerator_grid_width_css($grid_units, $grid_width, $fluid) . $lf;
+
+  $output .= "/* block indents */" . $lf;
+  $output .= _fusion_accelerator_grid_indent_css($grid_units, $grid_width, $fluid) . $lf;
+
+  $output .= "/* gutters (2 x margin) */" . $lf;
+  $output .= _fusion_accelerator_grid_gutter_css($grid_gutter) . $lf;
+
+  if (!$fluid) {
+    // minimum width is set to the fixed width.
+    $output .= _fusion_accelerator_grid_full_width_css($grid_width);
+  }
+  else {
+    // set a reasonable minimum width for fluid layouts.
+    $output .= _fusion_accelerator_grid_full_width_css(780) . $lf;
+    $output .= _fusion_accelerator_fluid_css($grid_units);
+  }
+
+  return $output;
+
+}
+
+function _fusion_accelerator_fluid_css($grid_units) {
+
+  $lf = "\n";
+  $tab = "  ";
+  $output = "";
+
+  $output .= "/* row max-min width */" . $lf;
+  $output .= ".row {" . $lf;
+  $output .= $tab . "max-width: 1320px;   /* 960px + 360px */" . $lf;
+  $output .= $tab . "min-width: 780px;    /* 960px - 180px */" . $lf;
+  $output .= "}" . $lf . $lf;
+
+  $output .= "/* allow nested rows to be smaller */" . $lf;
+  $output .= ".row.nested {" . $lf;
+  $output .= $tab . "min-width: 0;" . $lf;
+  $output .= "}" . $lf . $lf;
+
+  $output .= "/* theme setting: set fluid grid width on top-level full-width elements */" . $lf;
+  $output .= ".fluid-100 .full-width .grid{$grid_units}-{$grid_units} {width: 100%;}" . $lf;
+  $output .= ".fluid-95 .full-width .grid{$grid_units}-{$grid_units} {width: 95%;}" . $lf;
+  $output .= ".fluid-90 .full-width .grid{$grid_units}-{$grid_units} {width: 90%;}" . $lf;
+  $output .= ".fluid-85 .full-width .grid{$grid_units}-{$grid_units} {width: 85%;}" . $lf . $lf;
+
+  $output .= "/* now reset all nested full-width elements back to 100% */" . $lf;
+  $output .= "#page .grid{$grid_units}-{$grid_units} .grid{$grid_units}-{$grid_units} {width: 100%;}" . $lf;
+
+  return $output;
+
+}
+
+/**
+ * Sets the body width of fixed with grids.
+ *
+ * @input int
+ *    total width in pixels (eg: 960)
+ * @returns string
+ *    css
+ */
+function _fusion_accelerator_grid_full_width_css($grid_width) {
+  $lf = "\n";
+  $tab = "  ";
+
+  $output = "body," . $lf;
+  $output .= "div.full-width {" . $lf;
+  $output .= $tab . "min-width: {$grid_width}px;" . $lf;
+  $output .= "}" . $lf;
+
+  return $output;
+}
+
+/**
+ * Sets the width of each grid column.
+ *
+ * @input int
+ *    total grid units (eg: 16)
+ * @input int
+ *    for fixed grid widths, express in pixels (eg: 960).
+ *    for fluid, this should be 100
+ * @input boolean
+ *    if true, will express in percentage instead of pixels
+ * @returns string
+ *    css
+ */
+function _fusion_accelerator_grid_width_css($grid_units, $grid_width = 100, $fluid = FALSE) {
+  $unit = ($fluid) ? '%' : 'px';
+  $unit_width = _fusion_accelerator_unit_width($grid_units, $grid_width);
+  $output = '';
+
+  for ($i = 1; $i <= $grid_units; $i++) {
+    $this_grid_width = $i * $unit_width;
+    // fluid percentages are given 2 decimal points.
+    // pixels are floored.
+    $this_grid_width = ($fluid) ? round($this_grid_width, 2) : floor($this_grid_width);
+    $output .= 'body .grid' . $grid_units . '-' . $i . ' {width: ' . $this_grid_width . $unit . ';}' . "\n";
+  }
+  return $output;
+
+}
+
+/**
+ * @input int
+ *    total grid units (eg: 16)
+ * @input int
+ *    for fixed grid widths, express in pixels (eg: 960).
+ *    for fluid, this should be 100
+ * @input boolean
+ *    if true, will express in percentage instead of pixels
+ * @returns string
+ *    css
+ */
+function _fusion_accelerator_grid_indent_css($grid_units, $grid_width = 100, $fluid = FALSE) {
+  $unit = ($fluid) ? '%' : 'px';
+  $unit_width = _fusion_accelerator_unit_width($grid_units, $grid_width);
+  $output = '';
+
+  for ($i = 1; $i <= $grid_units - 1; $i++) {
+    $this_grid_width = $i * $unit_width;
+    // fluid percentages are given 2 decimal points.
+    // pixels are floored.
+    $this_grid_width = ($fluid) ? round($this_grid_width, 2) : floor($this_grid_width);
+    $output .= '.grid' . $grid_units . '-indent-' . $i . ' {margin-left: ' . $this_grid_width . $unit . ';}' . "\n";
+  }
+  return $output;
+}
+
+/**
+ * @input int
+ *    gutter in pixels (eg: 30)
+ * @returns string
+ *    css
+ */
+function _fusion_accelerator_grid_gutter_css($gutter_width) {
+  $output = '';
+  $lf = "\n";
+  $tab = "  ";
+
+  $output .= '.gutter {' . $lf;
+  $output .= $tab . 'margin-left: ' . floor($gutter_width / 2)  . 'px;' . $lf;
+  $output .= $tab . 'margin-right: ' . ceil($gutter_width / 2) . 'px;' . $lf;
+  $output .= '}' . $lf;
+  return $output;
+}
+
+/**
+ * @input int
+ *    total width in pixels (eg: 960)
+ * @returns string
+ *    css
+ */
+function _fusion_accelerator_grid_fix_css($gutter_width) {
+  $output = '';
+  $lf = "\n";
+  $tab = "  ";
+
+  $output .= '#content-content .node .first .inner {' . $lf;
+  $output .= $tab . "margin-right: {$gutter_width}px;" . $lf;
+  $output .= '}' . $lf;
+  return $output;
+}
+
+/**
+ * @input int
+ *    total grid units (eg: 16)
+ * @input int
+ *    grid width in pixels (eg: 960)
+ * @returns int
+ */
+function _fusion_accelerator_unit_width($grid_units, $grid_width) {
+  return $grid_width / $grid_units;
+}

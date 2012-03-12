@@ -1,0 +1,14 @@
+name = Fusion Grid Tools
+description = A collection of utilities for themers to build custom grids with Fusion.
+core = 7.x
+engine = phptemplate
+package = Fusion
+
+files[] = fusion_accelerator.module
+
+; Information added by drupal.org packaging script on 2011-11-01
+version = "7.x-2.0-alpha2"
+core = "7.x"
+project = "fusion_accelerator"
+datestamp = "1320119731"
+

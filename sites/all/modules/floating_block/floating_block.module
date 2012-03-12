@@ -1,0 +1,48 @@
+<?php
+// $Id: floating_block.module,v 1.2 2011/01/07 16:08:01 alexpott Exp $
+
+/**
+ * @file
+ * Allows regions of the site to float.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function floating_block_init() {
+  $selectors = preg_split("/(\r\n|\n)/", variable_get('floating_block_to_apply', ''));
+  if (count($selectors)) {
+    drupal_add_js(array('floating_block' => $selectors), array('type' => 'setting', 'scope' => JS_DEFAULT));
+    $path = drupal_get_path('module', 'floating_block');
+    drupal_add_js($path . '/floating_block.js');
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function floating_block_menu() {
+  $items = array();
+  $items['admin/config/floating_block'] = array(
+    'title' => 'Floating block',
+    'description' => 'Configure floating block.',
+    'access arguments' => array('administer site configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('floating_block_admin'),
+  );
+  return $items;
+}
+
+/**
+ * Form to config floating block settings.
+ */
+function floating_block_admin($form, &$form_state) {
+  $form = array();
+  $form['floating_block_to_apply'] = array(
+    '#type' => 'textarea',
+    '#title' => t('CSS Classes/Selectors to <em>Include</em>'),
+    '#default_value' => variable_get('floating_block_to_apply', ''),
+    '#description' => t('CSS selectors including id or class where to apply the floating block to. For example use <code>#sidebar-left</code> for ID, <code>.sidebar-left</code> for classes, and/or <code>#floating-block .floating_block</code> for combination. One selector per line.'),
+  );
+  return system_settings_form($form);
+}

@@ -1,0 +1,40 @@
+/* This file will hold styles for the mobile version of your website (mobile first). */
+/* This also can include ANY global CSS that applies site-wide. Unless overwritten by a more specific style rule, CSS declarations in global.css will apply site-wide. */
+
+.boxshadow #pageBorder {
+box-shadow: 5px 5px 20px #555;
+-webkit-box-shadow: 5px 5px 20px #555;
+}
+.region-branding {
+	  border-width:20px;
+    background-color:#FFF;
+    /*box-shadow: 5px 5px 20px #051b32;*/
+    /*-webkit-box-shadow: 5px 5px 20px #051b32;*/
+		}
+#pf table {
+    border: 0px;
+}
+#field-name-linkwithin table {
+    border:0px;
+}
+#zone-content {
+    border-left:10px solid #666666;
+    border-right:10px solid #666666;
+    border-bottom:10px solid #666666;
+}
+   
+#zone-preface, #zone-header {
+    border-left:10px solid #666666;
+    border-right:10px solid #666666;
+}
+
+#zone-menu, #region-branding {
+    border-top:10px solid #666666;
+    border-left:10px solid #666666;
+    border-right:10px solid #666666;
+}
+
+a:link, a:visited {
+    color:#666666;
+}
+

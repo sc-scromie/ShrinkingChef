@@ -1,0 +1,13 @@
+name = Fusion Apply UI Testing
+description = A test module used for testing Fusion Apply UI.
+package = Testing
+core = 7.x
+hidden = TRUE
+dependencies[] = fusion_apply_ui
+
+; Information added by drupal.org packaging script on 2011-11-01
+version = "7.x-2.0-alpha2"
+core = "7.x"
+project = "fusion_accelerator"
+datestamp = "1320119731"
+

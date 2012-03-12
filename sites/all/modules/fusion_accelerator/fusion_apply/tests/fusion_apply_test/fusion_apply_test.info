@@ -1,0 +1,13 @@
+name = Fusion Apply Testing
+description = Applies skins and performs other tests for Fusion Apply.
+package = Testing
+core = 7.x
+hidden = TRUE
+dependencies[] = fusion_apply
+
+; Information added by drupal.org packaging script on 2011-11-01
+version = "7.x-2.0-alpha2"
+core = "7.x"
+project = "fusion_accelerator"
+datestamp = "1320119731"
+

@@ -1,0 +1,141 @@
+<?php
+// $Id: noggin.module,v 1.1 2010/08/15 20:36:10 eaton Exp $
+
+/**
+ * Implements hook_form_alter().
+ */
+function noggin_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'system_theme_settings') {
+    // Logo settings
+    $form['noggin'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Header image settings'),
+      '#description' => t('If toggled on, the following header will be displayed.'),
+      '#attributes' => array('class' => array('theme-settings-bottom')),
+    );
+    $form['noggin']['use_header'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use a header image'),
+      '#default_value' => variable_get('noggin:use_header', FALSE),
+      '#tree' => FALSE,
+    );
+    $form['noggin']['settings'] = array(
+      '#type' => 'container',
+      '#states' => array(
+        // Hide the logo settings when using the default logo.
+        'invisible' => array(
+          'input[name="use_header"]' => array('checked' => FALSE),
+        ),
+      ),
+    );
+    $header_path = variable_get('noggin:header_path', NULL);
+    // If $header_path is a public:// URI, display the path relative to the files
+    // directory; stream wrappers are not end-user friendly.
+    if (file_uri_scheme($header_path) == 'public') {
+      $header_path = file_uri_target($header_path);
+    }
+    $form['noggin']['settings']['header_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to custom header'),
+      '#default_value' => $header_path,
+      '#description' => t('The path to the file you would like to use as your header.'),
+    );
+    $form['noggin']['settings']['header_upload'] = array(
+      '#type' => 'file',
+      '#title' => t('Upload header image'),
+      '#maxlength' => 40,
+      '#description' => t("If you don't have direct file access to the server, use this field to upload your header.")
+    );
+    $form['noggin']['settings']['header_selector'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CSS header selector'),
+      '#default_value' => variable_get('noggin:header_selector', 'div#header'),
+      '#description' => t('The CSS selector to use when placing the header image.'),
+    );
+    $form['noggin']['settings']['extra_attributes'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Additional CSS attributes'),
+      '#default_value' => variable_get('noggin:extra_attributes', NULL),
+      '#description' => t('Any additional CSS attributes, such as no-repeat or center, that should be applied to the header image.'),
+    );
+
+    
+    $form['#validate'][] = 'noggin_theme_settings_validate';
+    $form['#submit'][] = 'noggin_theme_settings_submit';
+  }
+}
+
+
+/**
+ * Validate system_theme_settings form submissions, handling extra values
+ * from the Noggin fields.
+ *
+ * Turns an uploaded file into a real filesystem item.
+ */
+function noggin_theme_settings_validate($form, &$form_state) {
+  // Handle file uploads.
+  $validators = array('file_validate_is_image' => array());
+
+  // Check for a new uploaded logo.
+  $file = file_save_upload('header_upload', $validators);
+  if (isset($file)) {
+    // File upload was attempted.
+    if ($file) {
+      // Put the temporary file in form_values so we can save it on submit.
+      $form_state['values']['header_upload'] = $file;
+    }
+    else {
+      // File upload failed.
+      form_set_error('header_upload', t('The header could not be uploaded.'));
+    }
+  }
+
+  // If the user provided a path for a logo or favicon file, make sure a file
+  // exists at that path.
+  if ($form_state['values']['header_path']) {
+    $path = _system_theme_settings_validate_path($form_state['values']['header_path']);
+    if (!$path) {
+      form_set_error('header_path', t('The custom header path is invalid.'));
+    }
+  }
+}
+
+/**
+ * Process system_theme_settings form submissions, handling extra values
+ * from the Noggin fields.
+ */
+function noggin_theme_settings_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  // If the user uploaded a new header image, save it to a permanent location
+  if ($file = $values['header_upload']) {
+    unset($values['header_upload']);
+    $filename = file_unmanaged_copy($file->uri);
+    $values['header_path'] = $filename;
+  }
+
+  // If the user entered a path relative to the system files directory for
+  // a header image, store a public:// URI so the theme system can handle it.
+  if (!empty($values['header_path'])) {
+    $values['header_path'] = _system_theme_settings_validate_path($values['header_path']);
+    variable_set('noggin:header_path', $values['header_path']);
+  }
+  
+  variable_set('noggin:use_header', $values['use_header']);
+  variable_set('noggin:header_selector', $values['header_selector']);
+  variable_set('noggin:extra_attributes', $values['extra_attributes']);
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function noggin_preprocess_page(&$vars) {
+  if (variable_get('noggin:use_header', FALSE)) {
+    $selector = variable_get('noggin:header_selector', 'div#header');
+    $extra_attributes = variable_get('noggin:attributes', NULL);
+
+    $path = variable_get('noggin:header_path');
+    $public_uri = file_create_url($path);
+    
+    drupal_add_css("$selector { background: url('$public_uri') $extra_attributes}", 'inline');
+  }
+}

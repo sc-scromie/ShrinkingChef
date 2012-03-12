@@ -1,0 +1,13 @@
+name = Fusion Apply
+description = Provides a way to define and/or skin bits of Drupal output from the UI.
+package = Fusion
+core = 7.x
+
+files[] = tests/fusion_apply.test
+
+; Information added by drupal.org packaging script on 2011-11-01
+version = "7.x-2.0-alpha2"
+core = "7.x"
+project = "fusion_accelerator"
+datestamp = "1320119731"
+
