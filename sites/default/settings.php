@@ -182,9 +182,9 @@ $databases = array (
   array (
     'default' => 
     array (
-      'database' => 'cromieen_shrinkchefprod',
-      'username' => 'cromieen_scadmin',
-      'password' => 'Sc4dm1n$',
+      'database' => '',
+      'username' => '',
+      'password' => '',
       'host' => 'localhost',
       'port' => '',
       'driver' => 'mysql',
